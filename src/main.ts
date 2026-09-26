@@ -126,25 +126,34 @@ let liveLoopRunning = false;
 async function liveTick(source: VideoPoseSource, video: HTMLVideoElement): Promise<void> {
   if (!liveLoopRunning) return;
 
-  const frame = await source.detect();
-  drawFrame(ctx, video, video.videoWidth, video.videoHeight);
-
-  if (frame) {
-    const height = estimateHeight(frame);
-    if (height) {
-      renderResultsTable(resultsSlot, computeProportions(frame, height, heightInput.getValueCm()));
-      const overlay = computeVitruvianOverlay(frame, height);
-      if (overlay) drawOverlay(ctx, overlay);
-      if (debugToggle.checked) drawLandmarkDots(ctx, frame);
-      statusEl.textContent = "Cámara en vivo — analizando en tiempo real.";
-    } else {
-      statusEl.textContent = "Cuerpo detectado, pero no se ve completo (¿faltan pies o piernas?).";
-    }
-  } else {
-    statusEl.textContent = "Buscando una persona en cámara...";
+  // Draw the raw camera frame first, unconditionally: a detection error below
+  // must never leave the user staring at a blank canvas with no feedback.
+  if (video.videoWidth > 0 && video.videoHeight > 0) {
+    drawFrame(ctx, video, video.videoWidth, video.videoHeight);
   }
 
-  requestAnimationFrame(() => void liveTick(source, video));
+  try {
+    const frame = await source.detect();
+    if (frame) {
+      const height = estimateHeight(frame);
+      if (height) {
+        renderResultsTable(resultsSlot, computeProportions(frame, height, heightInput.getValueCm()));
+        const overlay = computeVitruvianOverlay(frame, height);
+        if (overlay) drawOverlay(ctx, overlay);
+        if (debugToggle.checked) drawLandmarkDots(ctx, frame);
+        statusEl.textContent = "Cámara en vivo — analizando en tiempo real.";
+      } else {
+        statusEl.textContent = "Cuerpo detectado, pero no se ve completo (¿faltan pies o piernas?).";
+      }
+    } else {
+      statusEl.textContent = "Buscando una persona en cámara...";
+    }
+  } catch (err) {
+    console.error("Error analizando el cuadro de la cámara:", err);
+    statusEl.textContent = "La cámara está activa, pero hubo un error analizando este cuadro.";
+  }
+
+  if (liveLoopRunning) requestAnimationFrame(() => void liveTick(source, video));
 }
 
 liveControls.onStart(() => {

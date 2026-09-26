@@ -7,6 +7,8 @@ export interface LiveCameraControls {
   stop: () => void;
 }
 
+type FacingMode = "environment" | "user";
+
 export function createLiveCameraControls(): LiveCameraControls {
   const root = document.createElement("div");
   root.className = "live-camera";
@@ -18,6 +20,13 @@ export function createLiveCameraControls(): LiveCameraControls {
   video.muted = true;
   video.playsInline = true;
   video.className = "visually-hidden";
+
+  const facingSelect = document.createElement("select");
+  facingSelect.className = "camera-select";
+  facingSelect.innerHTML = `
+    <option value="environment">Cámara trasera</option>
+    <option value="user">Cámara frontal</option>
+  `;
 
   const startButton = document.createElement("button");
   startButton.type = "button";
@@ -33,32 +42,46 @@ export function createLiveCameraControls(): LiveCameraControls {
   const errorEl = document.createElement("p");
   errorEl.className = "camera-error";
 
-  root.append(startButton, stopButton, errorEl, video);
+  root.append(facingSelect, startButton, stopButton, errorEl, video);
 
   let stream: MediaStream | null = null;
   const startListeners: Array<() => void> = [];
   const stopListeners: Array<() => void> = [];
 
-  function stop(): void {
+  function stopStream(): void {
     stream?.getTracks().forEach((track) => track.stop());
     stream = null;
+  }
+
+  function stop(): void {
+    stopStream();
     video.srcObject = null;
     startButton.disabled = false;
     stopButton.disabled = true;
     for (const cb of stopListeners) cb();
   }
 
+  /** `ideal` (not `exact`) so desktops without a front/back camera distinction still work. */
+  async function openStream(facingMode: FacingMode): Promise<MediaStream> {
+    return navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: facingMode },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+      audio: false,
+    });
+  }
+
   startButton.addEventListener("click", async () => {
     errorEl.textContent = "";
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
+      stream = await openStream(facingSelect.value as FacingMode);
       video.srcObject = stream;
       await video.play();
       startButton.disabled = true;
       stopButton.disabled = false;
+      facingSelect.disabled = true;
       for (const cb of startListeners) cb();
     } catch (err) {
       errorEl.textContent =
@@ -67,7 +90,10 @@ export function createLiveCameraControls(): LiveCameraControls {
     }
   });
 
-  stopButton.addEventListener("click", stop);
+  stopButton.addEventListener("click", () => {
+    stop();
+    facingSelect.disabled = false;
+  });
 
   return {
     root,

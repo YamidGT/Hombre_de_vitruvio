@@ -91,6 +91,16 @@ h1 {
   font-size: 0.92rem;
 }
 
+.camera-select {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #bbb;
+  border-radius: 0.5rem;
+  background: #fff;
+  font-size: 0.92rem;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
 .camera-button {
   padding: 0.5rem 1rem;
   border: 1px solid #bbb;
@@ -98,9 +108,11 @@ h1 {
   background: #fff;
   cursor: pointer;
   margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.camera-button:disabled {
+.camera-button:disabled,
+.camera-select:disabled {
   opacity: 0.5;
   cursor: default;
 }
@@ -207,7 +219,8 @@ h1 {
     border-color: #555;
   }
   .mode-button,
-  .camera-button {
+  .camera-button,
+  .camera-select {
     background: #222;
     border-color: #555;
     color: #eee;
