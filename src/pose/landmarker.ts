@@ -2,7 +2,9 @@ import { FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
 
 // Self-hosted (copied from node_modules by `npm run sync-wasm`, see package.json)
 // so pose detection doesn't depend on a third-party CDN being reachable.
-const WASM_BASE_URL = "/wasm";
+// BASE_URL reflects Vite's configured `base` (e.g. "/Hombre_de_vitruvio/" in
+// production), so this keeps working when the site is served from a subpath.
+const WASM_BASE_URL = `${import.meta.env.BASE_URL}wasm`;
 
 // The trained model files have no self-hosted copy (a few MB each); they're
 // fetched once from Google's CDN on first load and contain no user data.
