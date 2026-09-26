@@ -11,7 +11,7 @@ export function renderLimitationsNotice(container: HTMLElement): void {
   details.className = "limitations";
 
   const summary = document.createElement("summary");
-  summary.textContent = "¿Qué tan preciso es esto?";
+  summary.textContent = "¿Qué tan preciso es este software?";
   details.appendChild(summary);
 
   const list = document.createElement("ul");
