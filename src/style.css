@@ -122,6 +122,51 @@ h1 {
   font-size: 0.88rem;
 }
 
+.register-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.auto-capture-toggle {
+  font-size: 0.88rem;
+  color: #555;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.register-snapshot {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 0.75rem;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.register-snapshot-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.register-timestamp {
+  font-size: 0.88rem;
+  font-style: italic;
+  color: #555;
+}
+
+.register-thumbnail {
+  max-width: 100%;
+  max-height: 220px;
+  display: block;
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
 .dropzone {
   display: flex;
   align-items: center;
@@ -212,8 +257,14 @@ h1 {
   .subtitle,
   .status,
   .debug-toggle,
-  .limitations {
+  .limitations,
+  .auto-capture-toggle,
+  .register-timestamp {
     color: #bbb;
+  }
+  .register-snapshot {
+    border-color: #444;
+    background: rgba(255, 255, 255, 0.04);
   }
   .dropzone {
     border-color: #555;

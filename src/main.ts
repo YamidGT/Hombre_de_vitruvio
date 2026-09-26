@@ -7,9 +7,11 @@ import { drawFrame, drawLandmarkDots, drawOverlay } from "./overlay/canvasRender
 import { createCaptureControls } from "./ui/captureControls";
 import { createLiveCameraControls } from "./ui/liveCamera";
 import { createHeightInput } from "./ui/heightInput";
+import { createRegisterPanel } from "./ui/registerPanel";
 import { renderResultsTable } from "./ui/resultsTable";
 import { renderLimitationsNotice } from "./ui/limitationsNotice";
-import type { HeightEstimate, PoseFrame } from "./measurement/types";
+import { isVitruvianPoseReady } from "./measurement/poseQuality";
+import type { HeightEstimate, PoseFrame, ProportionResult } from "./measurement/types";
 
 type Mode = "photo" | "live";
 
@@ -34,6 +36,7 @@ app.innerHTML = `
       Mostrar puntos de detección
     </label>
     <div id="results-slot"></div>
+    <div id="register-snapshot-slot"></div>
     <div id="limitations-slot"></div>
   </main>
 `;
@@ -42,6 +45,7 @@ const heightInputSlot = document.querySelector<HTMLDivElement>("#height-input-sl
 const photoSlot = document.querySelector<HTMLDivElement>("#photo-slot")!;
 const liveSlot = document.querySelector<HTMLDivElement>("#live-slot")!;
 const resultsSlot = document.querySelector<HTMLDivElement>("#results-slot")!;
+const registerSnapshotSlot = document.querySelector<HTMLDivElement>("#register-snapshot-slot")!;
 const limitationsSlot = document.querySelector<HTMLDivElement>("#limitations-slot")!;
 const statusEl = document.querySelector<HTMLParagraphElement>("#status")!;
 const canvas = document.querySelector<HTMLCanvasElement>("#canvas")!;
@@ -121,7 +125,31 @@ heightInput.onChange(renderPhotoResults);
 const liveControls = createLiveCameraControls();
 liveSlot.appendChild(liveControls.root);
 
+const registerPanel = createRegisterPanel();
+liveSlot.appendChild(registerPanel.controlsRoot);
+registerSnapshotSlot.appendChild(registerPanel.snapshotRoot);
+
 let liveLoopRunning = false;
+let latestLiveReading: { proportions: ProportionResult[] } | null = null;
+
+// Auto-capture: how long the pose must hold steady before triggering, and how
+// long to wait afterward before it can trigger again (so holding the pose
+// doesn't spam captures every frame).
+const POSE_STABLE_MS = 700;
+const AUTO_CAPTURE_COOLDOWN_MS = 4000;
+let poseReadySinceMs: number | null = null;
+let autoCaptureCooldownUntil = 0;
+
+function captureLiveMeasurement(): void {
+  if (!latestLiveReading) return;
+  registerPanel.showSnapshot({
+    proportions: latestLiveReading.proportions,
+    imageDataUrl: canvas.toDataURL("image/jpeg", 0.85),
+    timestamp: new Date(),
+  });
+}
+
+registerPanel.onCapture(captureLiveMeasurement);
 
 async function liveTick(source: VideoPoseSource, video: HTMLVideoElement): Promise<void> {
   if (!liveLoopRunning) return;
@@ -137,15 +165,40 @@ async function liveTick(source: VideoPoseSource, video: HTMLVideoElement): Promi
     if (frame) {
       const height = estimateHeight(frame);
       if (height) {
-        renderResultsTable(resultsSlot, computeProportions(frame, height, heightInput.getValueCm()));
+        const proportions = computeProportions(frame, height, heightInput.getValueCm());
+        renderResultsTable(resultsSlot, proportions);
         const overlay = computeVitruvianOverlay(frame, height);
         if (overlay) drawOverlay(ctx, overlay);
         if (debugToggle.checked) drawLandmarkDots(ctx, frame);
+
+        latestLiveReading = { proportions };
+        registerPanel.setCaptureEnabled(true);
+
+        if (registerPanel.isAutoCaptureEnabled()) {
+          const now = performance.now();
+          if (isVitruvianPoseReady(frame)) {
+            poseReadySinceMs ??= now;
+            if (now - poseReadySinceMs >= POSE_STABLE_MS && now >= autoCaptureCooldownUntil) {
+              captureLiveMeasurement();
+              autoCaptureCooldownUntil = now + AUTO_CAPTURE_COOLDOWN_MS;
+              statusEl.textContent = "¡Postura detectada! Medidas registradas automáticamente.";
+              requestAnimationFrame(() => void liveTick(source, video));
+              return;
+            }
+          } else {
+            poseReadySinceMs = null;
+          }
+        }
+
         statusEl.textContent = "Cámara en vivo — analizando en tiempo real.";
       } else {
+        latestLiveReading = null;
+        registerPanel.setCaptureEnabled(false);
         statusEl.textContent = "Cuerpo detectado, pero no se ve completo (¿faltan pies o piernas?).";
       }
     } else {
+      latestLiveReading = null;
+      registerPanel.setCaptureEnabled(false);
       statusEl.textContent = "Buscando una persona en cámara...";
     }
   } catch (err) {
@@ -158,12 +211,16 @@ async function liveTick(source: VideoPoseSource, video: HTMLVideoElement): Promi
 
 liveControls.onStart(() => {
   liveLoopRunning = true;
+  poseReadySinceMs = null;
+  autoCaptureCooldownUntil = 0;
   const source = new VideoPoseSource(liveControls.videoElement);
   void liveTick(source, liveControls.videoElement);
 });
 
 liveControls.onStop(() => {
   liveLoopRunning = false;
+  latestLiveReading = null;
+  registerPanel.setCaptureEnabled(false);
   statusEl.textContent = "Cámara detenida.";
 });
 
@@ -172,11 +229,13 @@ liveControls.onStop(() => {
 function setMode(mode: Mode): void {
   photoSlot.hidden = mode !== "photo";
   liveSlot.hidden = mode !== "live";
+  registerSnapshotSlot.hidden = mode !== "live";
   for (const button of modeButtons) {
     button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
   }
   if (mode !== "live") {
     liveControls.stop();
+    registerPanel.clearSnapshot();
   }
   resultsSlot.innerHTML = "";
   statusEl.textContent = "";
