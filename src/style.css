@@ -1,0 +1,230 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  --accent: #c9a227;
+  --page-bg: #f7f5f0;
+  --card-bg: rgba(247, 245, 240, 0.9);
+  --overlay-tint: rgba(247, 245, 240, 0.55);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--page-bg);
+  background-image: linear-gradient(var(--overlay-tint), var(--overlay-tint)), url("/vitruvian-bg.jpg");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  color: #1a1a1a;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+  background: var(--card-bg);
+  border-radius: 1rem;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 480px) {
+  .page {
+    border-radius: 0;
+    box-shadow: none;
+    padding: 1.25rem 1rem 3rem;
+  }
+  h1 {
+    font-size: 1.6rem;
+  }
+}
+
+h1 {
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  color: #555;
+  margin-top: 0;
+}
+
+.mode-switch {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.mode-button {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: 1px solid #bbb;
+  border-radius: 0.5rem;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.mode-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: rgba(201, 162, 39, 0.12);
+  font-weight: 600;
+}
+
+.mode-hint {
+  color: #666;
+  font-size: 0.88rem;
+  margin-top: 0.4rem;
+}
+
+.height-input {
+  display: block;
+  margin: 0.9rem 0;
+  font-size: 0.92rem;
+  color: #444;
+}
+
+.height-input input {
+  margin-left: 0.4rem;
+  width: 5rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid #bbb;
+  border-radius: 0.4rem;
+  font-size: 0.92rem;
+}
+
+.camera-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #bbb;
+  border-radius: 0.5rem;
+  background: #fff;
+  cursor: pointer;
+  margin-right: 0.5rem;
+}
+
+.camera-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.camera-error {
+  color: #a33;
+  font-size: 0.88rem;
+}
+
+.dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 8rem;
+  border: 2px dashed #bbb;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  text-align: center;
+  padding: 1rem;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.dropzone--active {
+  border-color: var(--accent);
+  background: rgba(201, 162, 39, 0.08);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.status {
+  min-height: 1.4em;
+  font-style: italic;
+  color: #444;
+}
+
+.canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  background: #eee;
+}
+
+.debug-toggle {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #555;
+  margin: 0.75rem 0;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.results-table th,
+.results-table td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid #ddd;
+  font-size: 0.92rem;
+}
+
+.results-empty {
+  color: #a33;
+}
+
+.limitations {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.limitations summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page-bg: #16151a;
+    --card-bg: rgba(22, 21, 26, 0.88);
+    --overlay-tint: rgba(10, 10, 12, 0.72);
+  }
+  body {
+    color: #eee;
+  }
+  .subtitle,
+  .status,
+  .debug-toggle,
+  .limitations {
+    color: #bbb;
+  }
+  .dropzone {
+    border-color: #555;
+  }
+  .mode-button,
+  .camera-button {
+    background: #222;
+    border-color: #555;
+    color: #eee;
+  }
+  .mode-hint {
+    color: #999;
+  }
+  .height-input {
+    color: #bbb;
+  }
+  .height-input input {
+    background: #222;
+    border-color: #555;
+    color: #eee;
+  }
+  .results-table th,
+  .results-table td {
+    border-bottom-color: #333;
+  }
+}
